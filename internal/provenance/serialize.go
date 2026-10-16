@@ -21,11 +21,17 @@ func Marshal(snap *Snapshot) ([]byte, error) {
 	return buf.Bytes(), nil
 }
 
-// Unmarshal parses a snapshot from JSON.
+// Unmarshal parses a snapshot from JSON, rejecting a document written by an
+// incompatible version before the digest is ever recomputed.
 func Unmarshal(data []byte) (*Snapshot, error) {
 	var snap Snapshot
 	if err := json.Unmarshal(data, &snap); err != nil {
 		return nil, fmt.Errorf("unmarshal snapshot: %w", err)
+	}
+	if snap.Schema != SchemaVersion {
+		return nil, fmt.Errorf(
+			"unmarshal snapshot: unsupported schema %q (this build writes %q)",
+			snap.Schema, SchemaVersion)
 	}
 	return &snap, nil
 }
